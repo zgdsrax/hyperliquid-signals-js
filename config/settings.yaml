@@ -1,0 +1,24 @@
+# Hyperliquid Signals Configuration
+
+monitoring:
+  coins: []  # Leave empty for auto, or ["BTC", "ETH", "SOL", "HYPE"]
+
+indicators:
+  rsi:
+    period: 14
+    overbought: 70
+    oversold: 30
+  volume:
+    lookback: 20
+    spikeThreshold: 3.0
+    dumpThreshold: 0.3
+  bollinger:
+    period: 20
+    stdDev: 2.0
+  atr:
+    period: 14
+    spikeThreshold: 2.0
+  priceChange:
+    pumpThreshold: 10.0
+    dumpThreshold: -10.0
+    lookbackHours: 24

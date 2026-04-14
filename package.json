@@ -1,0 +1,23 @@
+{
+  "name": "hyperliquid-signals",
+  "version": "1.0.0",
+  "description": "Hyperliquid trading signals with independent indicators - RSI, Volume, MACD, MA Cross, Bollinger, ATR, Price Change",
+  "main": "src/bot.js",
+  "scripts": {
+    "start": "node src/bot.js",
+    "once": "node src/bot.js --once",
+    "test": "node src/bot.js --once --coins BTC,ETH,SOL"
+  },
+  "keywords": [
+    "hyperliquid",
+    "trading",
+    "signals",
+    "crypto"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "js-yaml": "^4.1.1"
+  }
+}

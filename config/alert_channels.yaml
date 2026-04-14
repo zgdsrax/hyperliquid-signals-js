@@ -1,0 +1,8 @@
+# Alert Channels Configuration
+
+telegram:
+  bot_token: "8788327549:AAGYaZcWmDlCTu0tr7XpqkAbMhKJheU8CF0"
+  chat_id: "427107923"
+
+discord:
+  webhook_url: ""
