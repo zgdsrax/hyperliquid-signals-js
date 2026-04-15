@@ -51,13 +51,61 @@ class ChartGenerator {
     ctx.font = '24px Arial';
     ctx.fillText(`${rsiChange >= 0 ? '▲' : '▼'} ${Math.abs(rsiChange).toFixed(1)}`, this.width - 230, 85);
 
-    // RSI chart area
-    const chartLeft = 80;
+    // Data range for chart
+    const rsiStartIdx = rsiValues.length > 50 ? rsiValues.length - 50 : 0;
+
+    // RSI chart area with axes
+    const chartLeft = 120;
     const chartRight = this.width - 80;
     const chartTop = 120;
     const chartBottom = this.height - 150;
     const chartHeight = chartBottom - chartTop;
     const chartWidth = chartRight - chartLeft;
+
+    // === Y-Axis (RSI Scale 0-100) ===
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 1;
+
+    // Y-axis line
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, chartTop);
+    ctx.lineTo(chartLeft, chartBottom);
+    ctx.stroke();
+
+    // Y-axis labels
+    ctx.fillStyle = '#888888';
+    ctx.font = '16px Arial';
+    for (let i = 0; i <= 10; i++) {
+      const y = chartTop + (chartHeight / 10) * i;
+      const rsiVal = 100 - i * 10;
+
+      // Grid line
+      ctx.strokeStyle = '#333333';
+      ctx.beginPath();
+      ctx.moveTo(chartLeft, y);
+      ctx.lineTo(chartRight, y);
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = '#666666';
+      ctx.fillText(`${rsiVal}`, 5, y + 5);
+    }
+
+    // === X-Axis ===
+    ctx.strokeStyle = '#444444';
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, chartBottom);
+    ctx.lineTo(chartRight, chartBottom);
+    ctx.stroke();
+
+    // X-axis labels (period index)
+    ctx.fillStyle = '#888888';
+    ctx.font = '14px Arial';
+    for (let i = 0; i <= 5; i++) {
+      const x = chartLeft + (chartWidth / 5) * i;
+      const idx = Math.floor(rsiStartIdx + ((rsiValues.length - rsiStartIdx) / 5) * i);
+      ctx.fillText(`${idx}`, x - 10, chartBottom + 20);
+    }
 
     // Draw zones
     // Overbought zone (>70)
@@ -77,10 +125,10 @@ class ChartGenerator {
     ctx.lineWidth = 3;
     ctx.beginPath();
 
-    const startIdx = rsiValues.length > 100 ? rsiValues.length - 100 : 0;
+    const startIdx = rsiValues.length > 50 ? rsiValues.length - 50 : 0;
 
-    for (let i = startIdx; i < rsiValues.length; i++) {
-      const x = chartLeft + ((i - startIdx) / (rsiValues.length - startIdx - 1)) * chartWidth;
+    for (let i = rsiStartIdx; i < rsiValues.length; i++) {
+      const x = chartLeft + ((i - rsiStartIdx) / (rsiValues.length - rsiStartIdx - 1)) * chartWidth;
       const y = chartTop + chartHeight - (rsiValues[i] / 100) * chartHeight;
 
       if (i === startIdx) {
@@ -156,8 +204,8 @@ class ChartGenerator {
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // Get data
-    const candlesToDraw = candles.slice(-60); // Fewer candles, larger view
+    // Get data - HALF the candles for larger view
+    const candlesToDraw = candles.slice(-30); // 30 candles instead of 60
     const prices = candlesToDraw.map(c => parseFloat(c.c));
     const highs = candlesToDraw.map(c => parseFloat(c.h));
     const lows = candlesToDraw.map(c => parseFloat(c.l));
@@ -168,8 +216,8 @@ class ChartGenerator {
     const priceChangePct = prevPrice > 0 ? (priceChange / prevPrice) * 100 : 0;
     const priceColor = priceChange >= 0 ? '#00ff88' : '#ff4444';
 
-    const priceMin = Math.min(...lows);
-    const priceMax = Math.max(...highs);
+    const priceMin = Math.min(...lows) * 0.999;
+    const priceMax = Math.max(...highs) * 1.001;
     const priceRange = priceMax - priceMin || 1;
 
     // Calculate Bollinger Bands
@@ -189,14 +237,62 @@ class ChartGenerator {
     ctx.font = '24px Arial';
     ctx.fillText(`${priceChange >= 0 ? '▲' : '▼'} ${Math.abs(priceChange).toFixed(4)} (${priceChangePct.toFixed(2)}%)`, this.width - 330, 85);
 
-    // Candle area
-    const chartLeft = 100;
-    const chartRight = this.width - 150;
+    // Candle area with axes
+    const chartLeft = 120;
+    const chartRight = this.width - 180;
     const chartTop = 120;
-    const chartBottom = this.height - 180;
+    const chartBottom = this.height - 120;
     const chartHeight = chartBottom - chartTop;
     const chartWidth = chartRight - chartLeft;
     const candleWidth = chartWidth / candlesToDraw.length;
+
+    // === Y-Axis (Price Scale) ===
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+
+    // Y-axis line
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, chartTop);
+    ctx.lineTo(chartLeft, chartBottom);
+    ctx.stroke();
+
+    // Y-axis labels and grid lines
+    ctx.fillStyle = '#888888';
+    ctx.font = '16px Arial';
+    const ySteps = 8;
+    for (let i = 0; i <= ySteps; i++) {
+      const y = chartTop + (chartHeight / ySteps) * i;
+      const price = priceMax - (priceRange / ySteps) * i;
+
+      // Grid line
+      ctx.strokeStyle = '#333333';
+      ctx.beginPath();
+      ctx.moveTo(chartLeft, y);
+      ctx.lineTo(chartRight, y);
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = '#888888';
+      ctx.fillText(`$${price.toFixed(2)}`, 5, y + 5);
+    }
+
+    // === X-Axis (Candle/Time Scale) ===
+    ctx.strokeStyle = '#444444';
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, chartBottom);
+    ctx.lineTo(chartRight, chartBottom);
+    ctx.stroke();
+
+    // X-axis labels (show every 5th candle)
+    ctx.fillStyle = '#888888';
+    ctx.font = '14px Arial';
+    for (let i = 0; i < candlesToDraw.length; i += 5) {
+      const x = chartLeft + i * candleWidth + candleWidth / 2;
+      ctx.fillText(`${i + 1}`, x, chartBottom + 20);
+    }
+    // Last candle label
+    ctx.fillText(`${candlesToDraw.length}`, chartRight, chartBottom + 20);
 
     // Draw Bollinger Bands
     if (bb.upper.length > 0) {
@@ -354,20 +450,49 @@ class ChartGenerator {
     ctx.font = '20px Arial';
     ctx.fillText(`Signal: ${latest.signal.toFixed(5)}`, this.width - 280, 75);
 
-    // Chart area
-    const chartLeft = 100;
+    // Chart area with axes
+    const chartLeft = 120;
     const chartRight = this.width - 100;
     const chartTop = 120;
-    const chartBottom = this.height - 180;
+    const chartBottom = this.height - 150;
     const chartHeight = chartBottom - chartTop;
     const chartWidth = chartRight - chartLeft;
 
-    // Find range for scaling
+    // Find range for scaling (MUST be before axis labels)
     const allValues = macdData.flatMap(d => [d.macd, d.signal, d.histogram]);
     const maxVal = Math.max(...allValues.map(Math.abs)) || 1;
+    const centerY = chartTop + chartHeight / 2;
+
+    // === Y-Axis ===
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, chartTop);
+    ctx.lineTo(chartLeft, chartBottom);
+    ctx.stroke();
+
+    // Y-axis labels
+    ctx.fillStyle = '#888888';
+    ctx.font = '16px Arial';
+    ctx.fillText(`+${maxVal.toFixed(4)}`, 5, chartTop + 10);
+    ctx.fillText('0', 5, centerY + 5);
+    ctx.fillText(`-${maxVal.toFixed(4)}`, 5, chartBottom);
+
+    // === X-Axis ===
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, chartBottom);
+    ctx.lineTo(chartRight, chartBottom);
+    ctx.stroke();
+
+    // X-axis labels
+    ctx.font = '14px Arial';
+    for (let i = 0; i <= 4; i++) {
+      const x = chartLeft + (chartWidth / 4) * i;
+      const period = Math.floor((macdData.length / 4) * i);
+      ctx.fillText(`${period}`, x - 10, chartBottom + 20);
+    }
 
     // Draw zero line
-    const centerY = chartTop + chartHeight / 2;
     ctx.strokeStyle = '#666666';
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
@@ -480,12 +605,41 @@ class ChartGenerator {
 
     // Volume bars
     const maxVol = Math.max(...volumes) || 1;
-    const volHeight = this.height * 0.55;
+    const volHeight = this.height * 0.5;
     const volTop = this.height * 0.35;
-    const chartLeft = 100;
+    const chartLeft = 120;
     const chartRight = this.width - 100;
     const chartWidth = chartRight - chartLeft;
     const barWidth = chartWidth / candles.length;
+
+    // === Y-Axis (Volume) ===
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, volTop);
+    ctx.lineTo(chartLeft, volTop + volHeight);
+    ctx.stroke();
+
+    // Y-axis labels
+    ctx.fillStyle = '#888888';
+    ctx.font = '16px Arial';
+    ctx.fillText(this.formatNumber(maxVol), 5, volTop + 15);
+    ctx.fillText(this.formatNumber(maxVol / 2), 5, volTop + volHeight / 2 + 5);
+    ctx.fillText(this.formatNumber(avgVol), 5, volTop + volHeight - 5);
+
+    // === X-Axis ===
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, volTop + volHeight);
+    ctx.lineTo(chartRight, volTop + volHeight);
+    ctx.stroke();
+
+    // X-axis labels
+    ctx.font = '14px Arial';
+    for (let i = 0; i <= 4; i++) {
+      const x = chartLeft + (chartWidth / 4) * i;
+      const idx = Math.floor((candles.length / 4) * i);
+      ctx.fillText(`${idx}`, x - 10, volTop + volHeight + 20);
+    }
 
     // Average line
     const avgY = volTop + volHeight - (avgVol / maxVol) * volHeight;
