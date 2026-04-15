@@ -1,7 +1,7 @@
 # Alert Channels Configuration
 
 telegram:
-  bot_token: "8788327549:AAGYaZcWmDlCTu0tr7XpqkAbMhKJheU8CF0"
+  bot_token: "8796391383:AAG3RNsFSC1StHsKiHdVxqqE-h6AtkDw4T4"
   chat_id: "427107923"
 
 discord:
