@@ -222,6 +222,12 @@ class HyperliquidSignalsBot {
         continue;
       }
 
+      // Filter: skip VOLUME_DUMP (only alert VOLUME_SPIKE)
+      if (signal.signalType === 'VOLUME_DUMP') {
+        console.log(`  ⏭️ Skipping ${signal.indicator} ${signal.signalType} - volume down`);
+        continue;
+      }
+
       const emoji = signal.signalType.includes('BEARISH') ||
         signal.signalType.includes('OVERBOUGHT') ||
         signal.signalType.includes('DUMP') ? '🔴' : '🟢';
