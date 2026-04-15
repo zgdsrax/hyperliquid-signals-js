@@ -18,6 +18,7 @@ const { MACalculator } = require('./indicators/ma_cross');
 const { BollingerCalculator } = require('./indicators/bollinger');
 const { ATRCalculator } = require('./indicators/atr');
 const { PriceChangeAnalyzer } = require('./indicators/price_change');
+const { SuperTrendCalculator } = require('./indicators/supertrend');
 const { SignalManager } = require('./signals/signalManager');
 
 class HyperliquidSignalsBot {
@@ -79,6 +80,8 @@ class HyperliquidSignalsBot {
           return BollingerCalculator.checkSignal(candles, coin, timeframe);
         case 'ATR':
           return ATRCalculator.checkSignal(candles, coin, timeframe);
+        case 'SUPERTREND':
+          return SuperTrendCalculator.checkSignal(candles, coin, timeframe);
         case 'PRICE':
           return PriceChangeAnalyzer.checkSignal(candles, coin, timeframe);
         default:
@@ -91,7 +94,7 @@ class HyperliquidSignalsBot {
   }
 
   async scanAll(coins, timeframe = '15m') {
-    const indicators = ['RSI', 'VOLUME', 'MACD', 'MA_CROSS', 'BOLLINGER', 'ATR', 'PRICE'];
+    const indicators = ['RSI', 'VOLUME', 'MACD', 'MA_CROSS', 'BOLLINGER', 'ATR', 'PRICE', 'SUPERTREND'];
     const signals = [];
 
     console.log(`\n📊 Scanning ${coins.length} coins with ${indicators.length} indicators...`);
@@ -145,7 +148,8 @@ class HyperliquidSignalsBot {
             chartBuffer = this.chartGenerator.drawMACDChart(candles, signal.coin, signal.timeframe);
             break;
           case 'BOLLINGER':
-            chartBuffer = this.chartGenerator.drawCandleChart(candles, signal.coin, signal.timeframe);
+          case 'SUPERTREND':
+            chartBuffer = this.chartGenerator.drawCandleChart(candles, signal.coin, signal.timeframe, signal.indicator);
             break;
           default:
             chartBuffer = this.chartGenerator.drawCandleChart(candles, signal.coin, signal.timeframe);

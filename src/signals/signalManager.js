@@ -56,7 +56,9 @@ class SignalManager {
       'BB_LOWER_BREAK': '📉',
       'ATR_VOLATILITY_SPIKE': '⚡',
       'PRICE_PUMP': '🚀',
-      'PRICE_DUMP': '📉'
+      'PRICE_DUMP': '📉',
+      'SUPERTREND_BULLISH': '🟢',
+      'SUPERTREND_BEARISH': '🔴'
     };
 
     const emoji = emojiMap[signal.signalType] || '📊';
