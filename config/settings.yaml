@@ -1,6 +1,7 @@
 # Hyperliquid Signals Configuration
 
 monitoring:
+  interval_minutes: 15
   coins: []  # Leave empty for auto, or ["BTC", "ETH", "SOL", "HYPE"]
 
 indicators:
