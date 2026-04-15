@@ -6,7 +6,7 @@
 const { createCanvas } = require('canvas');
 
 class ChartGenerator {
-  constructor(width = 1600, height = 800) {
+  constructor(width = 2400, height = 1200) {
     this.width = width;
     this.height = height;
   }
@@ -34,31 +34,31 @@ class ChartGenerator {
 
     // Title with coin, timeframe and RSI
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 32px Arial';
-    ctx.fillText(`${coin}/USDT - RSI (${rsiPeriod}) ${timeframe}`, 30, 50);
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText(`${coin}/USDT - RSI (${rsiPeriod}) ${timeframe}`, 25, 40);
 
     // RSI value box
     const rsiColor = latestRSI > 70 ? '#ff4444' : latestRSI < 30 ? '#44ff44' : '#ffd700';
     ctx.fillStyle = rsiColor;
-    ctx.fillRect(this.width - 250, 20, 220, 70);
+    ctx.fillRect(this.width - 200, 10, 185, 55);
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 36px Arial';
-    ctx.fillText(`RSI: ${latestRSI.toFixed(1)}`, this.width - 230, 65);
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText(`RSI: ${latestRSI.toFixed(1)}`, this.width - 185, 45);
 
     // Change indicator
     const rsiChange = latestRSI - prevRSI;
     ctx.fillStyle = rsiChange >= 0 ? '#00ff88' : '#ff4444';
-    ctx.font = '24px Arial';
-    ctx.fillText(`${rsiChange >= 0 ? '▲' : '▼'} ${Math.abs(rsiChange).toFixed(1)}`, this.width - 230, 85);
+    ctx.font = '18px Arial';
+    ctx.fillText(`${rsiChange >= 0 ? '▲' : '▼'} ${Math.abs(rsiChange).toFixed(1)}`, this.width - 185, 60);
 
     // Data range for chart
     const rsiStartIdx = rsiValues.length > 50 ? rsiValues.length - 50 : 0;
 
     // RSI chart area with axes
-    const chartLeft = 120;
-    const chartRight = this.width - 80;
-    const chartTop = 120;
-    const chartBottom = this.height - 150;
+    const chartLeft = 80;
+    const chartRight = this.width - 60;
+    const chartTop = 80;
+    const chartBottom = this.height - 80;
     const chartHeight = chartBottom - chartTop;
     const chartWidth = chartRight - chartLeft;
 
@@ -74,7 +74,7 @@ class ChartGenerator {
 
     // Y-axis labels
     ctx.fillStyle = '#888888';
-    ctx.font = '16px Arial';
+    ctx.font = '14px Arial';
     for (let i = 0; i <= 10; i++) {
       const y = chartTop + (chartHeight / 10) * i;
       const rsiVal = 100 - i * 10;
@@ -88,7 +88,7 @@ class ChartGenerator {
 
       // Label
       ctx.fillStyle = '#666666';
-      ctx.fillText(`${rsiVal}`, 5, y + 5);
+      ctx.fillText(`${rsiVal}`, 3, y + 4);
     }
 
     // === X-Axis ===
@@ -100,11 +100,11 @@ class ChartGenerator {
 
     // X-axis labels (period index)
     ctx.fillStyle = '#888888';
-    ctx.font = '14px Arial';
+    ctx.font = '12px Arial';
     for (let i = 0; i <= 5; i++) {
       const x = chartLeft + (chartWidth / 5) * i;
       const idx = Math.floor(rsiStartIdx + ((rsiValues.length - rsiStartIdx) / 5) * i);
-      ctx.fillText(`${idx}`, x - 10, chartBottom + 20);
+      ctx.fillText(`${idx}`, x - 8, chartBottom + 15);
     }
 
     // Draw zones
@@ -186,9 +186,8 @@ class ChartGenerator {
 
     // Footer info
     ctx.fillStyle = '#888888';
-    ctx.font = '22px Arial';
-    ctx.fillText(`Data: ${candles.length} candles | Period: ${rsiPeriod}`, 30, this.height - 30);
-    ctx.fillText(`Signal: ${latestRSI > 70 ? 'OVERBOUGHT' : latestRSI < 30 ? 'OVERSOLD' : 'NEUTRAL'}`, chartRight - 250, this.height - 30);
+    ctx.font = '16px Arial';
+    ctx.fillText(`Data: ${candles.length} candles | Period: ${rsiPeriod} | Signal: ${latestRSI > 70 ? 'OVERBOUGHT' : latestRSI < 30 ? 'OVERSOLD' : 'NEUTRAL'}`, 25, this.height - 20);
 
     return canvas.toBuffer('image/png');
   }
@@ -225,23 +224,23 @@ class ChartGenerator {
 
     // Title
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 32px Arial';
-    ctx.fillText(`${coin}/USDT - ${indicator} ${timeframe}`, 30, 50);
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText(`${coin}/USDT - ${indicator} ${timeframe}`, 25, 40);
 
     // Price box
     ctx.fillStyle = priceColor;
-    ctx.fillRect(this.width - 350, 15, 330, 80);
+    ctx.fillRect(this.width - 300, 10, 285, 60);
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 36px Arial';
-    ctx.fillText(`$${latestPrice.toFixed(4)}`, this.width - 330, 60);
-    ctx.font = '24px Arial';
-    ctx.fillText(`${priceChange >= 0 ? '▲' : '▼'} ${Math.abs(priceChange).toFixed(4)} (${priceChangePct.toFixed(2)}%)`, this.width - 330, 85);
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText(`$${latestPrice.toFixed(4)}`, this.width - 285, 42);
+    ctx.font = '18px Arial';
+    ctx.fillText(`${priceChange >= 0 ? '▲' : '▼'} ${Math.abs(priceChange).toFixed(4)} (${priceChangePct.toFixed(2)}%)`, this.width - 285, 62);
 
     // Candle area with axes
-    const chartLeft = 120;
-    const chartRight = this.width - 180;
-    const chartTop = 120;
-    const chartBottom = this.height - 120;
+    const chartLeft = 80;
+    const chartRight = this.width - 140;
+    const chartTop = 80;
+    const chartBottom = this.height - 100;
     const chartHeight = chartBottom - chartTop;
     const chartWidth = chartRight - chartLeft;
     const candleWidth = chartWidth / candlesToDraw.length;
@@ -259,8 +258,8 @@ class ChartGenerator {
 
     // Y-axis labels and grid lines
     ctx.fillStyle = '#888888';
-    ctx.font = '16px Arial';
-    const ySteps = 8;
+    ctx.font = '14px Arial';
+    const ySteps = 10;
     for (let i = 0; i <= ySteps; i++) {
       const y = chartTop + (chartHeight / ySteps) * i;
       const price = priceMax - (priceRange / ySteps) * i;
@@ -274,7 +273,7 @@ class ChartGenerator {
 
       // Label
       ctx.fillStyle = '#888888';
-      ctx.fillText(`$${price.toFixed(2)}`, 5, y + 5);
+      ctx.fillText(`$${price.toFixed(2)}`, 3, y + 4);
     }
 
     // === X-Axis (Candle/Time Scale) ===
@@ -286,13 +285,13 @@ class ChartGenerator {
 
     // X-axis labels (show every 5th candle)
     ctx.fillStyle = '#888888';
-    ctx.font = '14px Arial';
+    ctx.font = '12px Arial';
     for (let i = 0; i < candlesToDraw.length; i += 5) {
       const x = chartLeft + i * candleWidth + candleWidth / 2;
-      ctx.fillText(`${i + 1}`, x, chartBottom + 20);
+      ctx.fillText(`${i + 1}`, x - 5, chartBottom + 15);
     }
     // Last candle label
-    ctx.fillText(`${candlesToDraw.length}`, chartRight, chartBottom + 20);
+    ctx.fillText(`${candlesToDraw.length}`, chartRight - 10, chartBottom + 15);
 
     // Draw Bollinger Bands
     if (bb.upper.length > 0) {
@@ -437,24 +436,24 @@ class ChartGenerator {
 
     // Title
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 32px Arial';
-    ctx.fillText(`${coin}/USDT - MACD (12, 26, 9) ${timeframe}`, 30, 50);
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText(`${coin}/USDT - MACD (12, 26, 9) ${timeframe}`, 25, 40);
 
     // MACD value box
     const macdColor = latest.histogram >= 0 ? '#00ff88' : '#ff4444';
     ctx.fillStyle = macdColor;
-    ctx.fillRect(this.width - 300, 15, 280, 80);
+    ctx.fillRect(this.width - 250, 10, 235, 55);
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 28px Arial';
-    ctx.fillText(`MACD: ${latest.macd.toFixed(5)}`, this.width - 280, 50);
-    ctx.font = '20px Arial';
-    ctx.fillText(`Signal: ${latest.signal.toFixed(5)}`, this.width - 280, 75);
+    ctx.font = 'bold 22px Arial';
+    ctx.fillText(`MACD: ${latest.macd.toFixed(4)}`, this.width - 235, 38);
+    ctx.font = '16px Arial';
+    ctx.fillText(`Signal: ${latest.signal.toFixed(4)}`, this.width - 235, 55);
 
     // Chart area with axes
-    const chartLeft = 120;
-    const chartRight = this.width - 100;
-    const chartTop = 120;
-    const chartBottom = this.height - 150;
+    const chartLeft = 80;
+    const chartRight = this.width - 80;
+    const chartTop = 80;
+    const chartBottom = this.height - 100;
     const chartHeight = chartBottom - chartTop;
     const chartWidth = chartRight - chartLeft;
 
@@ -473,23 +472,24 @@ class ChartGenerator {
 
     // Y-axis labels
     ctx.fillStyle = '#888888';
-    ctx.font = '16px Arial';
-    ctx.fillText(`+${maxVal.toFixed(4)}`, 5, chartTop + 10);
-    ctx.fillText('0', 5, centerY + 5);
-    ctx.fillText(`-${maxVal.toFixed(4)}`, 5, chartBottom);
+    ctx.font = '14px Arial';
+    ctx.fillText(`+${maxVal.toFixed(4)}`, 3, chartTop + 12);
+    ctx.fillText('0', 3, centerY + 4);
+    ctx.fillText(`-${maxVal.toFixed(4)}`, 3, chartBottom);
 
     // === X-Axis ===
+    ctx.strokeStyle = '#444444';
     ctx.beginPath();
     ctx.moveTo(chartLeft, chartBottom);
     ctx.lineTo(chartRight, chartBottom);
     ctx.stroke();
 
     // X-axis labels
-    ctx.font = '14px Arial';
+    ctx.font = '12px Arial';
     for (let i = 0; i <= 4; i++) {
       const x = chartLeft + (chartWidth / 4) * i;
       const period = Math.floor((macdData.length / 4) * i);
-      ctx.fillText(`${period}`, x - 10, chartBottom + 20);
+      ctx.fillText(`${period}`, x - 8, chartBottom + 15);
     }
 
     // Draw zero line
@@ -590,25 +590,25 @@ class ChartGenerator {
 
     // Title
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 32px Arial';
-    ctx.fillText(`${coin}/USDT - VOLUME ${timeframe}`, 30, 50);
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText(`${coin}/USDT - VOLUME ${timeframe}`, 25, 40);
 
     // Volume box
     const volColor = volRatio > 3 ? '#ff4444' : volRatio < 0.5 ? '#ffd700' : '#00ff88';
     ctx.fillStyle = volColor;
-    ctx.fillRect(this.width - 350, 15, 330, 80);
+    ctx.fillRect(this.width - 280, 10, 265, 55);
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 28px Arial';
-    ctx.fillText(`${volRatio.toFixed(2)}x AVG`, this.width - 330, 50);
-    ctx.font = '22px Arial';
-    ctx.fillText(`Current: ${this.formatNumber(latestVol)}`, this.width - 330, 78);
+    ctx.font = 'bold 22px Arial';
+    ctx.fillText(`${volRatio.toFixed(2)}x AVG`, this.width - 265, 38);
+    ctx.font = '16px Arial';
+    ctx.fillText(`Vol: ${this.formatNumber(latestVol)}`, this.width - 265, 55);
 
     // Volume bars
     const maxVol = Math.max(...volumes) || 1;
-    const volHeight = this.height * 0.5;
-    const volTop = this.height * 0.35;
-    const chartLeft = 120;
-    const chartRight = this.width - 100;
+    const volHeight = this.height * 0.6;
+    const volTop = this.height * 0.25;
+    const chartLeft = 80;
+    const chartRight = this.width - 80;
     const chartWidth = chartRight - chartLeft;
     const barWidth = chartWidth / candles.length;
 
@@ -622,10 +622,10 @@ class ChartGenerator {
 
     // Y-axis labels
     ctx.fillStyle = '#888888';
-    ctx.font = '16px Arial';
-    ctx.fillText(this.formatNumber(maxVol), 5, volTop + 15);
-    ctx.fillText(this.formatNumber(maxVol / 2), 5, volTop + volHeight / 2 + 5);
-    ctx.fillText(this.formatNumber(avgVol), 5, volTop + volHeight - 5);
+    ctx.font = '12px Arial';
+    ctx.fillText(this.formatNumber(maxVol), 3, volTop + 12);
+    ctx.fillText(this.formatNumber(maxVol / 2), 3, volTop + volHeight / 2 + 4);
+    ctx.fillText(this.formatNumber(avgVol), 3, volTop + volHeight - 3);
 
     // === X-Axis ===
     ctx.beginPath();
@@ -634,11 +634,11 @@ class ChartGenerator {
     ctx.stroke();
 
     // X-axis labels
-    ctx.font = '14px Arial';
+    ctx.font = '12px Arial';
     for (let i = 0; i <= 4; i++) {
       const x = chartLeft + (chartWidth / 4) * i;
       const idx = Math.floor((candles.length / 4) * i);
-      ctx.fillText(`${idx}`, x - 10, volTop + volHeight + 20);
+      ctx.fillText(`${idx}`, x - 8, volTop + volHeight + 15);
     }
 
     // Average line
