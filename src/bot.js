@@ -90,7 +90,7 @@ class HyperliquidSignalsBot {
     }
   }
 
-  async scanAll(coins, timeframe = '1h') {
+  async scanAll(coins, timeframe = '15m') {
     const indicators = ['RSI', 'VOLUME', 'MACD', 'MA_CROSS', 'BOLLINGER', 'ATR', 'PRICE'];
     const signals = [];
 
@@ -131,24 +131,24 @@ class HyperliquidSignalsBot {
       let chartBuffer = null;
 
       if (candles && candles.length > 20) {
-        console.log(`  Generating ${signal.indicator} chart for ${signal.coin}...`);
+        console.log(`  Generating ${signal.indicator} chart for ${signal.coin} ${signal.timeframe}...`);
 
         // Generate chart based on indicator type
         switch (signal.indicator) {
           case 'RSI':
-            chartBuffer = this.chartGenerator.drawRSIChart(candles, signal.coin);
+            chartBuffer = this.chartGenerator.drawRSIChart(candles, signal.coin, signal.timeframe);
             break;
           case 'VOLUME':
-            chartBuffer = this.chartGenerator.drawVolumeChart(candles, signal.coin);
+            chartBuffer = this.chartGenerator.drawVolumeChart(candles, signal.coin, signal.timeframe);
             break;
           case 'MACD':
-            chartBuffer = this.chartGenerator.drawMACDChart(candles, signal.coin);
+            chartBuffer = this.chartGenerator.drawMACDChart(candles, signal.coin, signal.timeframe);
             break;
           case 'BOLLINGER':
-            chartBuffer = this.chartGenerator.drawCandleChart(candles, signal.coin, 'BOLLINGER');
+            chartBuffer = this.chartGenerator.drawCandleChart(candles, signal.coin, signal.timeframe);
             break;
           default:
-            chartBuffer = this.chartGenerator.drawCandleChart(candles, signal.coin, signal.indicator);
+            chartBuffer = this.chartGenerator.drawCandleChart(candles, signal.coin, signal.timeframe);
         }
       }
 

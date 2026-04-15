@@ -14,7 +14,7 @@ class ChartGenerator {
   /**
    * Draw RSI indicator with data
    */
-  drawRSIChart(candles, coin) {
+  drawRSIChart(candles, coin, timeframe = '15m') {
     const canvas = createCanvas(this.width, this.height);
     const ctx = canvas.getContext('2d');
 
@@ -32,10 +32,10 @@ class ChartGenerator {
     const latestRSI = rsiValues[rsiValues.length - 1];
     const prevRSI = rsiValues[rsiValues.length - 2] || latestRSI;
 
-    // Title with coin and RSI
+    // Title with coin, timeframe and RSI
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 32px Arial';
-    ctx.fillText(`${coin}/USDT - RSI (${rsiPeriod})`, 30, 50);
+    ctx.fillText(`${coin}/USDT - RSI (${rsiPeriod}) ${timeframe}`, 30, 50);
 
     // RSI value box
     const rsiColor = latestRSI > 70 ? '#ff4444' : latestRSI < 30 ? '#44ff44' : '#ffd700';
@@ -196,7 +196,7 @@ class ChartGenerator {
   /**
    * Draw candlestick chart with Bollinger Bands and data
    */
-  drawCandleChart(candles, coin, indicator = 'BOLLINGER') {
+  drawCandleChart(candles, coin, timeframe = '15m', indicator = 'BOLLINGER') {
     const canvas = createCanvas(this.width, this.height);
     const ctx = canvas.getContext('2d');
 
@@ -226,7 +226,7 @@ class ChartGenerator {
     // Title
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 32px Arial';
-    ctx.fillText(`${coin}/USDT - ${indicator}`, 30, 50);
+    ctx.fillText(`${coin}/USDT - ${indicator} ${timeframe}`, 30, 50);
 
     // Price box
     ctx.fillStyle = priceColor;
@@ -420,7 +420,7 @@ class ChartGenerator {
   /**
    * Draw MACD chart with data
    */
-  drawMACDChart(candles, coin) {
+  drawMACDChart(candles, coin, timeframe = '15m') {
     const canvas = createCanvas(this.width, this.height);
     const ctx = canvas.getContext('2d');
 
@@ -438,7 +438,7 @@ class ChartGenerator {
     // Title
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 32px Arial';
-    ctx.fillText(`${coin}/USDT - MACD (12, 26, 9)`, 30, 50);
+    ctx.fillText(`${coin}/USDT - MACD (12, 26, 9) ${timeframe}`, 30, 50);
 
     // MACD value box
     const macdColor = latest.histogram >= 0 ? '#00ff88' : '#ff4444';
@@ -575,7 +575,7 @@ class ChartGenerator {
   /**
    * Draw Volume chart with data
    */
-  drawVolumeChart(candles, coin) {
+  drawVolumeChart(candles, coin, timeframe = '15m') {
     const canvas = createCanvas(this.width, this.height);
     const ctx = canvas.getContext('2d');
 
@@ -591,7 +591,7 @@ class ChartGenerator {
     // Title
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 32px Arial';
-    ctx.fillText(`${coin}/USDT - VOLUME`, 30, 50);
+    ctx.fillText(`${coin}/USDT - VOLUME ${timeframe}`, 30, 50);
 
     // Volume box
     const volColor = volRatio > 3 ? '#ff4444' : volRatio < 0.5 ? '#ffd700' : '#00ff88';
