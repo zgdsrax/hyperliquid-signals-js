@@ -33,6 +33,15 @@ npm start
 node src/bot.js --interval 30
 ```
 
+## 📸 Telegram Alert with Chart
+
+Mỗi signal được gửi kèm chart để visualize:
+
+- **RSI** - RSI chart với overbought/oversold zones
+- **Volume** - Volume bars với spike indicators
+- **MACD** - MACD histogram với signal line crossover
+- **Bollinger** - Candlestick chart với Bollinger Bands overlay
+
 ## 📁 Project Structure
 
 ```
@@ -42,7 +51,7 @@ hyperliquid-signals/
 │   └── alert_channels.yaml   # Telegram/Discord
 ├── src/
 │   ├── api/
-│   │   └── hyperliquid.js     # Hyperliquid API client
+│   │   └── hyperliquid.js    # Hyperliquid API client
 │   ├── indicators/
 │   │   ├── rsi.js
 │   │   ├── volume.js
@@ -50,10 +59,11 @@ hyperliquid-signals/
 │   │   ├── ma_cross.js
 │   │   ├── bollinger.js
 │   │   ├── atr.js
-│   │   └── price_change.js
+│   │   ├── price_change.js
+│   │   └── chartGenerator.js # Chart generation
 │   ├── signals/
 │   │   └── signalManager.js
-│   └── bot.js                # Main entry
+│   └── bot.js               # Main entry
 ├── package.json
 └── README.md
 ```

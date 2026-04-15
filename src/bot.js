@@ -1,10 +1,13 @@
 /**
  * Hyperliquid Signals Bot (Node.js)
+ * With Chart Generation for Telegram Alerts
  */
 
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const FormData = require('form-data');
+const { ChartGenerator } = require('./indicators/chartGenerator');
 
 // Import modules
 const { HyperliquidClient } = require('./api/hyperliquid');
@@ -21,6 +24,7 @@ class HyperliquidSignalsBot {
   constructor() {
     this.client = new HyperliquidClient();
     this.signalManager = new SignalManager();
+    this.chartGenerator = new ChartGenerator(800, 400);
     this.config = this.loadConfig();
     this.alertConfig = this.loadAlertConfig();
   }
@@ -54,7 +58,7 @@ class HyperliquidSignalsBot {
 
     const meta = await this.client.getMeta();
     const active = meta.filter(c => !c.isDelisted).map(c => c.name);
-    return active.slice(0, 30); // Top 30 coins
+    return active.slice(0, 30);
   }
 
   async runIndicator(coin, timeframe, indicatorName) {
@@ -103,8 +107,6 @@ class HyperliquidSignalsBot {
       }
 
       console.log('✓');
-
-      // Rate limit
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
@@ -115,19 +117,82 @@ class HyperliquidSignalsBot {
     const token = this.alertConfig?.telegram?.bot_token;
     const chatId = this.alertConfig?.telegram?.chat_id;
 
-    if (!token || !chatId) return;
+    if (!token || !chatId) {
+      console.log('Telegram not configured, skipping alert');
+      return;
+    }
 
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
     const message = this.signalManager.formatTelegramMessage(signal);
 
     try {
-      await axios.post(url, {
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'HTML'
-      }, { timeout: 10000 });
+      // Get candles for chart
+      const candles = await this.client.getCandles(signal.coin, signal.timeframe, 200);
+      let chartBuffer = null;
+
+      if (candles && candles.length > 20) {
+        console.log(`  Generating ${signal.indicator} chart for ${signal.coin}...`);
+
+        // Generate chart based on indicator type
+        switch (signal.indicator) {
+          case 'RSI':
+            chartBuffer = this.chartGenerator.drawRSIChart(candles, signal.coin);
+            break;
+          case 'VOLUME':
+            chartBuffer = this.chartGenerator.drawVolumeChart(candles, signal.coin);
+            break;
+          case 'MACD':
+            chartBuffer = this.chartGenerator.drawMACDChart(candles, signal.coin);
+            break;
+          case 'BOLLINGER':
+            chartBuffer = this.chartGenerator.drawCandleChart(candles, signal.coin, 'BOLLINGER');
+            break;
+          default:
+            chartBuffer = this.chartGenerator.drawCandleChart(candles, signal.coin, signal.indicator);
+        }
+      }
+
+      // Send chart with message
+      if (chartBuffer) {
+        // Save chart to temp file
+        const tempFile = `/tmp/${signal.coin}_${signal.indicator}_${Date.now()}.png`;
+        fs.writeFileSync(tempFile, chartBuffer);
+
+        const formData = new FormData();
+        formData.append('chat_id', chatId);
+        formData.append('caption', message);
+        formData.append('photo', fs.createReadStream(tempFile));
+        formData.append('parse_mode', 'HTML');
+
+        await axios.post(url.replace('/sendMessage', '/sendPhoto'), formData, {
+          headers: formData.getHeaders(),
+          timeout: 30000
+        });
+
+        // Cleanup
+        fs.unlinkSync(tempFile);
+        console.log(`  ✅ Sent ${signal.indicator} chart for ${signal.coin}`);
+      } else {
+        // Fallback to text only
+        await axios.post(url, {
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML'
+        }, { timeout: 10000 });
+      }
+
     } catch (error) {
-      console.error(`Telegram error: ${error.message}`);
+      console.error(`  ❌ Telegram error: ${error.message}`);
+      // Fallback to text only
+      try {
+        await axios.post(url, {
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML'
+        }, { timeout: 10000 });
+      } catch (e) {
+        console.error(`  Fallback also failed: ${e.message}`);
+      }
     }
   }
 
@@ -146,15 +211,15 @@ class HyperliquidSignalsBot {
 
     // Process signals
     for (const signal of signals) {
-      const emoji = signal.signalType.includes('BEARISH') || 
-                    signal.signalType.includes('OVERBOUGHT') || 
-                    signal.signalType.includes('DUMP') ? '🔴' : '🟢';
-      
+      const emoji = signal.signalType.includes('BEARISH') ||
+        signal.signalType.includes('OVERBOUGHT') ||
+        signal.signalType.includes('DUMP') ? '🔴' : '🟢';
+
       console.log(`  ${emoji} [${signal.indicator}] ${signal.coin}: ${signal.signalType} (${signal.severity})`);
 
-      // Send to Telegram
+      // Send to Telegram with chart
       await this.sendTelegramAlert(signal);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Rate limit
     }
 
     return signals;
@@ -167,9 +232,9 @@ async function main() {
   const intervalArg = args.find(a => a.startsWith('--interval='));
   const interval = intervalArg ? parseInt(intervalArg.split('=')[1]) : 15;
   const coinsArg = args.find(a => a.startsWith('--coins='));
-  
+
   const bot = new HyperliquidSignalsBot();
-  
+
   if (coinsArg) {
     const coins = coinsArg.split('=')[1].split(',');
     bot.coinsOverride = coins;
@@ -184,7 +249,6 @@ async function main() {
 
     await bot.runScan();
 
-    // Schedule next scan
     setInterval(async () => {
       await bot.runScan();
     }, interval * 60 * 1000);
