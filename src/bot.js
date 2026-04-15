@@ -215,6 +215,13 @@ class HyperliquidSignalsBot {
 
     // Process signals
     for (const signal of signals) {
+      // Filter: only send HIGH/EXTREME signals
+      const severitySetting = this.config?.severity?.only_send_high;
+      if (severitySetting && signal.severity !== 'HIGH' && signal.severity !== 'EXTREME') {
+        console.log(`  ⏭️ Skipping ${signal.indicator} ${signal.signalType} (${signal.severity}) - below threshold`);
+        continue;
+      }
+
       const emoji = signal.signalType.includes('BEARISH') ||
         signal.signalType.includes('OVERBOUGHT') ||
         signal.signalType.includes('DUMP') ? '🔴' : '🟢';

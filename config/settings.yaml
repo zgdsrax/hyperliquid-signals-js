@@ -7,19 +7,24 @@ monitoring:
 indicators:
   rsi:
     period: 14
-    overbought: 70
-    oversold: 30
+    overbought: 80  # Raised from 70
+    oversold: 20    # Raised from 30
   volume:
     lookback: 20
-    spikeThreshold: 3.0
-    dumpThreshold: 0.3
+    spikeThreshold: 5.0   # Raised from 3.0 (only extreme spikes)
+    dumpThreshold: 0.15     # Lowered from 0.3 (only extreme dumps)
   bollinger:
     period: 20
     stdDev: 2.0
   atr:
     period: 14
-    spikeThreshold: 2.0
+    spikeThreshold: 3.0  # Raised from 2.0
   priceChange:
-    pumpThreshold: 10.0
-    dumpThreshold: -10.0
+    pumpThreshold: 20.0   # Raised from 10.0
+    dumpThreshold: -20.0  # Raised from -10.0
     lookbackHours: 24
+
+# Signal severity thresholds
+severity:
+  high_threshold: "HIGH"
+  only_send_high: true  # Only send HIGH/EXTREME signals to Telegram
