@@ -1,17 +1,18 @@
 /**
  * Chart Generator - Create charts with indicators for Telegram alerts
+ * Enhanced with larger size and more data
  */
 
 const { createCanvas } = require('canvas');
 
 class ChartGenerator {
-  constructor(width = 800, height = 400) {
+  constructor(width = 1600, height = 800) {
     this.width = width;
     this.height = height;
   }
 
   /**
-   * Draw RSI indicator
+   * Draw RSI indicator with data
    */
   drawRSIChart(candles, coin) {
     const canvas = createCanvas(this.width, this.height);
@@ -26,18 +27,61 @@ class ChartGenerator {
     const closes = candles.map(c => parseFloat(c.c));
     const rsiValues = this.calculateRSI(closes, rsiPeriod);
 
+    if (rsiValues.length === 0) return canvas.toBuffer('image/png');
+
+    const latestRSI = rsiValues[rsiValues.length - 1];
+    const prevRSI = rsiValues[rsiValues.length - 2] || latestRSI;
+
+    // Title with coin and RSI
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px Arial';
+    ctx.fillText(`${coin}/USDT - RSI (${rsiPeriod})`, 30, 50);
+
+    // RSI value box
+    const rsiColor = latestRSI > 70 ? '#ff4444' : latestRSI < 30 ? '#44ff44' : '#ffd700';
+    ctx.fillStyle = rsiColor;
+    ctx.fillRect(this.width - 250, 20, 220, 70);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 36px Arial';
+    ctx.fillText(`RSI: ${latestRSI.toFixed(1)}`, this.width - 230, 65);
+
+    // Change indicator
+    const rsiChange = latestRSI - prevRSI;
+    ctx.fillStyle = rsiChange >= 0 ? '#00ff88' : '#ff4444';
+    ctx.font = '24px Arial';
+    ctx.fillText(`${rsiChange >= 0 ? '▲' : '▼'} ${Math.abs(rsiChange).toFixed(1)}`, this.width - 230, 85);
+
+    // RSI chart area
+    const chartLeft = 80;
+    const chartRight = this.width - 80;
+    const chartTop = 120;
+    const chartBottom = this.height - 150;
+    const chartHeight = chartBottom - chartTop;
+    const chartWidth = chartRight - chartLeft;
+
+    // Draw zones
+    // Overbought zone (>70)
+    ctx.fillStyle = 'rgba(255, 68, 68, 0.2)';
+    ctx.fillRect(chartLeft, chartTop, chartWidth, chartHeight * 0.3);
+
+    // Oversold zone (<30)
+    ctx.fillStyle = 'rgba(68, 255, 68, 0.2)';
+    ctx.fillRect(chartLeft, chartTop + chartHeight * 0.7, chartWidth, chartHeight * 0.3);
+
+    // Neutral zone (40-60) - subtle
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.fillRect(chartLeft, chartTop + chartHeight * 0.4, chartWidth, chartHeight * 0.2);
+
     // Draw RSI line
     ctx.strokeStyle = '#00ff88';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.beginPath();
 
-    const rsiHeight = this.height * 0.3;
-    const rsiTop = this.height * 0.05;
     const startIdx = rsiValues.length > 100 ? rsiValues.length - 100 : 0;
 
     for (let i = startIdx; i < rsiValues.length; i++) {
-      const x = ((i - startIdx) / (rsiValues.length - startIdx)) * this.width;
-      const y = rsiTop + rsiHeight - (rsiValues[i] / 100) * rsiHeight;
+      const x = chartLeft + ((i - startIdx) / (rsiValues.length - startIdx - 1)) * chartWidth;
+      const y = chartTop + chartHeight - (rsiValues[i] / 100) * chartHeight;
 
       if (i === startIdx) {
         ctx.moveTo(x, y);
@@ -47,33 +91,62 @@ class ChartGenerator {
     }
     ctx.stroke();
 
-    // Draw overbought/oversold lines
-    ctx.strokeStyle = '#ff4444';
+    // Draw horizontal lines
+    ctx.strokeStyle = '#666666';
+    ctx.lineWidth = 1;
     ctx.setLineDash([5, 5]);
+
+    // 70 line (overbought)
+    const y70 = chartTop + chartHeight * 0.3;
     ctx.beginPath();
-    ctx.moveTo(0, rsiTop + rsiHeight * 0.3); // 70
-    ctx.lineTo(this.width, rsiTop + rsiHeight * 0.3);
+    ctx.moveTo(chartLeft, y70);
+    ctx.lineTo(chartRight, y70);
+    ctx.stroke();
+    ctx.fillStyle = '#ff4444';
+    ctx.font = '20px Arial';
+    ctx.fillText('70 (Overbought)', chartRight - 160, y70 - 5);
+
+    // 30 line (oversold)
+    const y30 = chartTop + chartHeight * 0.7;
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, y30);
+    ctx.lineTo(chartRight, y30);
+    ctx.stroke();
+    ctx.fillStyle = '#44ff44';
+    ctx.fillText('30 (Oversold)', chartRight - 150, y30 + 25);
+
+    // 50 line (neutral)
+    ctx.strokeStyle = '#444444';
+    const y50 = chartTop + chartHeight * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, y50);
+    ctx.lineTo(chartRight, y50);
     ctx.stroke();
 
-    ctx.strokeStyle = '#44ff44';
-    ctx.beginPath();
-    ctx.moveTo(0, rsiTop + rsiHeight * 0.7); // 30
-    ctx.lineTo(this.width, rsiTop + rsiHeight * 0.7);
-    ctx.stroke();
     ctx.setLineDash([]);
 
-    // Labels
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px Arial';
-    ctx.fillText(`${coin}/USDT - RSI`, 10, 25);
-    ctx.fillStyle = '#00ff88';
-    ctx.fillText(`RSI: ${rsiValues[rsiValues.length - 1]?.toFixed(1)}`, 10, this.height - 10);
+    // Current RSI dot
+    const lastX = chartRight;
+    const lastY = chartTop + chartHeight - (latestRSI / 100) * chartHeight;
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 8, 0, Math.PI * 2);
+    ctx.fillStyle = rsiColor;
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Footer info
+    ctx.fillStyle = '#888888';
+    ctx.font = '22px Arial';
+    ctx.fillText(`Data: ${candles.length} candles | Period: ${rsiPeriod}`, 30, this.height - 30);
+    ctx.fillText(`Signal: ${latestRSI > 70 ? 'OVERBOUGHT' : latestRSI < 30 ? 'OVERSOLD' : 'NEUTRAL'}`, chartRight - 250, this.height - 30);
 
     return canvas.toBuffer('image/png');
   }
 
   /**
-   * Draw candlestick chart with Bollinger Bands
+   * Draw candlestick chart with Bollinger Bands and data
    */
   drawCandleChart(candles, coin, indicator = 'BOLLINGER') {
     const canvas = createCanvas(this.width, this.height);
@@ -83,58 +156,105 @@ class ChartGenerator {
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, this.width, this.height);
 
-    const candlesToDraw = candles.slice(-80);
+    // Get data
+    const candlesToDraw = candles.slice(-60); // Fewer candles, larger view
+    const prices = candlesToDraw.map(c => parseFloat(c.c));
+    const highs = candlesToDraw.map(c => parseFloat(c.h));
+    const lows = candlesToDraw.map(c => parseFloat(c.l));
+
+    const latestPrice = prices[prices.length - 1];
+    const prevPrice = prices[prices.length - 2] || latestPrice;
+    const priceChange = latestPrice - prevPrice;
+    const priceChangePct = prevPrice > 0 ? (priceChange / prevPrice) * 100 : 0;
+    const priceColor = priceChange >= 0 ? '#00ff88' : '#ff4444';
+
+    const priceMin = Math.min(...lows);
+    const priceMax = Math.max(...highs);
+    const priceRange = priceMax - priceMin || 1;
 
     // Calculate Bollinger Bands
-    const bb = this.calculateBollinger(candlesToDraw.map(c => parseFloat(c.c)), 20, 2);
+    const bb = this.calculateBollinger(prices, 20, 2);
+
+    // Title
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px Arial';
+    ctx.fillText(`${coin}/USDT - ${indicator}`, 30, 50);
+
+    // Price box
+    ctx.fillStyle = priceColor;
+    ctx.fillRect(this.width - 350, 15, 330, 80);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 36px Arial';
+    ctx.fillText(`$${latestPrice.toFixed(4)}`, this.width - 330, 60);
+    ctx.font = '24px Arial';
+    ctx.fillText(`${priceChange >= 0 ? '▲' : '▼'} ${Math.abs(priceChange).toFixed(4)} (${priceChangePct.toFixed(2)}%)`, this.width - 330, 85);
+
+    // Candle area
+    const chartLeft = 100;
+    const chartRight = this.width - 150;
+    const chartTop = 120;
+    const chartBottom = this.height - 180;
+    const chartHeight = chartBottom - chartTop;
+    const chartWidth = chartRight - chartLeft;
+    const candleWidth = chartWidth / candlesToDraw.length;
 
     // Draw Bollinger Bands
-    ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
-    ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
-    ctx.beginPath();
+    if (bb.upper.length > 0) {
+      const bbOffset = prices.length - bb.upper.length;
 
-    // Upper band fill
-    for (let i = 0; i < bb.upper.length; i++) {
-      const x = (i / bb.upper.length) * this.width;
-      if (i === 0) ctx.moveTo(x, bb.upper[i]);
-      else ctx.lineTo(x, bb.upper[i]);
-    }
+      // Band fill
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
+      ctx.beginPath();
+      for (let i = 0; i < bb.upper.length; i++) {
+        const x = chartLeft + ((i + bbOffset) / (prices.length - 1)) * chartWidth;
+        const y = chartTop + chartHeight - ((bb.upper[i] - priceMin) / priceRange) * chartHeight;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      for (let i = bb.lower.length - 1; i >= 0; i--) {
+        const x = chartLeft + ((i + bbOffset) / (prices.length - 1)) * chartWidth;
+        const y = chartTop + chartHeight - ((bb.lower[i] - priceMin) / priceRange) * chartHeight;
+        ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
 
-    // Lower band (reverse)
-    for (let i = bb.lower.length - 1; i >= 0; i--) {
-      const x = (i / bb.lower.length) * this.width;
-      ctx.lineTo(x, bb.lower[i]);
-    }
-    ctx.closePath();
-    ctx.fill();
+      // Upper band
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < bb.upper.length; i++) {
+        const x = chartLeft + ((i + bbOffset) / (prices.length - 1)) * chartWidth;
+        const y = chartTop + chartHeight - ((bb.upper[i] - priceMin) / priceRange) * chartHeight;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
 
-    // Draw bands
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let i = 0; i < bb.upper.length; i++) {
-      const x = (i / bb.upper.length) * this.width;
-      if (i === 0) ctx.moveTo(x, bb.upper[i]);
-      else ctx.lineTo(x, bb.upper[i]);
-    }
-    ctx.stroke();
+      // Middle band
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
+      ctx.beginPath();
+      for (let i = 0; i < bb.middle.length; i++) {
+        const x = chartLeft + ((i + bbOffset) / (prices.length - 1)) * chartWidth;
+        const y = chartTop + chartHeight - ((bb.middle[i] - priceMin) / priceRange) * chartHeight;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
 
-    ctx.beginPath();
-    for (let i = 0; i < bb.lower.length; i++) {
-      const x = (i / bb.lower.length) * this.width;
-      if (i === 0) ctx.moveTo(x, bb.lower[i]);
-      else ctx.lineTo(x, bb.lower[i]);
+      // Lower band
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+      ctx.beginPath();
+      for (let i = 0; i < bb.lower.length; i++) {
+        const x = chartLeft + ((i + bbOffset) / (prices.length - 1)) * chartWidth;
+        const y = chartTop + chartHeight - ((bb.lower[i] - priceMin) / priceRange) * chartHeight;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
     }
-    ctx.stroke();
 
     // Draw candles
-    const candleWidth = this.width / candlesToDraw.length;
-    const priceMin = Math.min(...candlesToDraw.map(c => parseFloat(c.l)));
-    const priceMax = Math.max(...candlesToDraw.map(c => parseFloat(c.h)));
-    const priceRange = priceMax - priceMin || 1;
-    const chartHeight = this.height * 0.65;
-    const chartTop = this.height * 0.35;
-
     for (let i = 0; i < candlesToDraw.length; i++) {
       const c = candlesToDraw[i];
       const open = parseFloat(c.o);
@@ -142,37 +262,67 @@ class ChartGenerator {
       const high = parseFloat(c.h);
       const low = parseFloat(c.l);
 
-      const x = i * candleWidth + candleWidth / 2;
+      const x = chartLeft + i * candleWidth + candleWidth / 2;
       const isGreen = close >= open;
       const color = isGreen ? '#00ff88' : '#ff4444';
 
       // Wick
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 2;
+      const wickTop = chartTop + chartHeight - ((high - priceMin) / priceRange) * chartHeight;
+      const wickBottom = chartTop + chartHeight - ((low - priceMin) / priceRange) * chartHeight;
       ctx.beginPath();
-      ctx.moveTo(x, chartTop + (priceMax - high) / priceRange * chartHeight);
-      ctx.lineTo(x, chartTop + (priceMax - low) / priceRange * chartHeight);
+      ctx.moveTo(x, wickTop);
+      ctx.lineTo(x, wickBottom);
       ctx.stroke();
 
       // Body
-      const bodyTop = chartTop + (priceMax - Math.max(open, close)) / priceRange * chartHeight;
-      const bodyBottom = chartTop + (priceMax - Math.min(open, close)) / priceRange * chartHeight;
-      const bodyHeight = Math.max(1, bodyBottom - bodyTop);
+      const bodyTop = chartTop + chartHeight - ((Math.max(open, close) - priceMin) / priceRange) * chartHeight;
+      const bodyBottom = chartTop + chartHeight - ((Math.min(open, close) - priceMin) / priceRange) * chartHeight;
+      const bodyHeight = Math.max(2, bodyBottom - bodyTop);
 
       ctx.fillStyle = color;
       ctx.fillRect(x - candleWidth * 0.35, bodyTop, candleWidth * 0.7, bodyHeight);
     }
 
-    // Labels
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px Arial';
-    ctx.fillText(`${coin}/USDT - ${indicator}`, 10, 25);
+    // Price scale (right side)
+    ctx.fillStyle = '#666666';
+    ctx.font = '18px Arial';
+    for (let i = 0; i <= 5; i++) {
+      const y = chartTop + (chartHeight / 5) * i;
+      const price = priceMax - (priceRange / 5) * i;
+      ctx.fillText(`$${price.toFixed(2)}`, chartRight + 10, y + 5);
+      ctx.strokeStyle = '#333333';
+      ctx.beginPath();
+      ctx.moveTo(chartRight, y);
+      ctx.lineTo(chartRight + 5, y);
+      ctx.stroke();
+    }
+
+    // BB values
+    if (bb.upper.length > 0) {
+      const lastBB = {
+        upper: bb.upper[bb.upper.length - 1],
+        middle: bb.middle[bb.middle.length - 1],
+        lower: bb.lower[bb.lower.length - 1]
+      };
+      ctx.fillStyle = '#ffd700';
+      ctx.font = '20px Arial';
+      ctx.fillText(`Upper: $${lastBB.upper.toFixed(4)}`, 30, this.height - 100);
+      ctx.fillText(`Middle: $${lastBB.middle.toFixed(4)}`, 30, this.height - 75);
+      ctx.fillText(`Lower: $${lastBB.lower.toFixed(4)}`, 30, this.height - 50);
+    }
+
+    // Footer
+    ctx.fillStyle = '#888888';
+    ctx.font = '22px Arial';
+    ctx.fillText(`Data: ${candles.length} candles | Range: $${priceMin.toFixed(2)} - $${priceMax.toFixed(2)}`, 30, this.height - 25);
 
     return canvas.toBuffer('image/png');
   }
 
   /**
-   * Draw MACD chart
+   * Draw MACD chart with data
    */
   drawMACDChart(candles, coin) {
     const canvas = createCanvas(this.width, this.height);
@@ -186,41 +336,73 @@ class ChartGenerator {
 
     if (macdData.length === 0) return canvas.toBuffer('image/png');
 
-    const chartHeight = this.height * 0.4;
-    const chartTop = this.height * 0.3;
-    const centerY = chartTop + chartHeight / 2;
+    const latest = macdData[macdData.length - 1];
+    const prev = macdData[macdData.length - 2] || latest;
 
-    // Draw zero line
-    ctx.strokeStyle = '#666666';
-    ctx.setLineDash([3, 3]);
-    ctx.beginPath();
-    ctx.moveTo(0, centerY);
-    ctx.lineTo(this.width, centerY);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    // Title
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px Arial';
+    ctx.fillText(`${coin}/USDT - MACD (12, 26, 9)`, 30, 50);
+
+    // MACD value box
+    const macdColor = latest.histogram >= 0 ? '#00ff88' : '#ff4444';
+    ctx.fillStyle = macdColor;
+    ctx.fillRect(this.width - 300, 15, 280, 80);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText(`MACD: ${latest.macd.toFixed(5)}`, this.width - 280, 50);
+    ctx.font = '20px Arial';
+    ctx.fillText(`Signal: ${latest.signal.toFixed(5)}`, this.width - 280, 75);
+
+    // Chart area
+    const chartLeft = 100;
+    const chartRight = this.width - 100;
+    const chartTop = 120;
+    const chartBottom = this.height - 180;
+    const chartHeight = chartBottom - chartTop;
+    const chartWidth = chartRight - chartLeft;
 
     // Find range for scaling
     const allValues = macdData.flatMap(d => [d.macd, d.signal, d.histogram]);
     const maxVal = Math.max(...allValues.map(Math.abs)) || 1;
 
+    // Draw zero line
+    const centerY = chartTop + chartHeight / 2;
+    ctx.strokeStyle = '#666666';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, centerY);
+    ctx.lineTo(chartRight, centerY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Positive histogram zone
+    ctx.fillStyle = 'rgba(0, 255, 136, 0.1)';
+    ctx.fillRect(chartLeft, chartTop, chartWidth, chartHeight / 2);
+
+    // Negative histogram zone
+    ctx.fillStyle = 'rgba(255, 68, 68, 0.1)';
+    ctx.fillRect(chartLeft, centerY, chartWidth, chartHeight / 2);
+
     // Draw histogram
-    const barWidth = this.width / macdData.length;
+    const barWidth = chartWidth / macdData.length;
     for (let i = 0; i < macdData.length; i++) {
       const d = macdData[i];
-      const x = i * barWidth;
+      const x = chartLeft + i * barWidth;
       const h = Math.abs(d.histogram) / maxVal * chartHeight / 2;
       const y = d.histogram >= 0 ? centerY - h : centerY;
 
-      ctx.fillStyle = d.histogram >= 0 ? 'rgba(0, 255, 136, 0.5)' : 'rgba(255, 68, 68, 0.5)';
-      ctx.fillRect(x, y, barWidth - 1, h);
+      ctx.fillStyle = d.histogram >= 0 ? 'rgba(0, 255, 136, 0.6)' : 'rgba(255, 68, 68, 0.6)';
+      ctx.fillRect(x + 1, y, barWidth - 2, h);
     }
 
     // Draw MACD line
     ctx.strokeStyle = '#00aaff';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.beginPath();
     for (let i = 0; i < macdData.length; i++) {
-      const x = (i + 0.5) * barWidth;
+      const x = chartLeft + (i + 0.5) * barWidth;
       const y = centerY - (macdData[i].macd / maxVal) * chartHeight / 2;
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
@@ -229,25 +411,44 @@ class ChartGenerator {
 
     // Draw Signal line
     ctx.strokeStyle = '#ffaa00';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.beginPath();
     for (let i = 0; i < macdData.length; i++) {
-      const x = (i + 0.5) * barWidth;
+      const x = chartLeft + (i + 0.5) * barWidth;
       const y = centerY - (macdData[i].signal / maxVal) * chartHeight / 2;
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
     ctx.stroke();
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px Arial';
-    ctx.fillText(`${coin}/USDT - MACD`, 10, 25);
+    // Current dot
+    ctx.beginPath();
+    ctx.arc(chartRight, centerY - (latest.macd / maxVal) * chartHeight / 2, 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#00aaff';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(chartRight, centerY - (latest.signal / maxVal) * chartHeight / 2, 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffaa00';
+    ctx.fill();
+
+    // Legend
+    ctx.fillStyle = '#00aaff';
+    ctx.font = '22px Arial';
+    ctx.fillText('─ MACD Line', chartRight - 180, this.height - 120);
+    ctx.fillStyle = '#ffaa00';
+    ctx.fillText('─ Signal Line', chartRight - 180, this.height - 95);
+
+    // Footer
+    ctx.fillStyle = '#888888';
+    ctx.font = '22px Arial';
+    ctx.fillText(`Data: ${macdData.length} periods | Histogram: ${latest.histogram.toFixed(5)} | Signal: ${latest.signal >= 0 ? 'BULLISH' : 'BEARISH'}`, 30, this.height - 30);
 
     return canvas.toBuffer('image/png');
   }
 
   /**
-   * Draw Volume chart
+   * Draw Volume chart with data
    */
   drawVolumeChart(candles, coin) {
     const canvas = createCanvas(this.width, this.height);
@@ -257,11 +458,51 @@ class ChartGenerator {
     ctx.fillRect(0, 0, this.width, this.height);
 
     const volumes = candles.map(c => parseFloat(c.v));
-    const avgVolume = volumes.slice(0, -1).reduce((a, b) => a + b, 0) / (volumes.length - 1) || 1;
-    const maxVol = Math.max(...volumes) || 1;
+    const closes = candles.map(c => parseFloat(c.c));
+    const latestVol = volumes[volumes.length - 1];
+    const avgVol = volumes.slice(0, -1).reduce((a, b) => a + b, 0) / (volumes.length - 1) || 1;
+    const volRatio = latestVol / avgVol;
 
-    const volHeight = this.height * 0.3;
-    const volTop = this.height * 0.65;
+    // Title
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px Arial';
+    ctx.fillText(`${coin}/USDT - VOLUME`, 30, 50);
+
+    // Volume box
+    const volColor = volRatio > 3 ? '#ff4444' : volRatio < 0.5 ? '#ffd700' : '#00ff88';
+    ctx.fillStyle = volColor;
+    ctx.fillRect(this.width - 350, 15, 330, 80);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText(`${volRatio.toFixed(2)}x AVG`, this.width - 330, 50);
+    ctx.font = '22px Arial';
+    ctx.fillText(`Current: ${this.formatNumber(latestVol)}`, this.width - 330, 78);
+
+    // Volume bars
+    const maxVol = Math.max(...volumes) || 1;
+    const volHeight = this.height * 0.55;
+    const volTop = this.height * 0.35;
+    const chartLeft = 100;
+    const chartRight = this.width - 100;
+    const chartWidth = chartRight - chartLeft;
+    const barWidth = chartWidth / candles.length;
+
+    // Average line
+    const avgY = volTop + volHeight - (avgVol / maxVol) * volHeight;
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([10, 5]);
+    ctx.beginPath();
+    ctx.moveTo(chartLeft, avgY);
+    ctx.lineTo(chartRight, avgY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ffd700';
+    ctx.font = '18px Arial';
+    ctx.fillText(`AVG: ${this.formatNumber(avgVol)}`, chartRight - 150, avgY - 5);
+
+    // Spike zones
+    const spikeZone = avgY - 20;
 
     for (let i = 0; i < candles.length; i++) {
       const c = candles[i];
@@ -269,29 +510,51 @@ class ChartGenerator {
       const open = parseFloat(c.o);
       const close = parseFloat(c.c);
       const isGreen = close >= open;
-      const barWidth = this.width / candles.length;
-
-      const x = i * barWidth;
+      const x = chartLeft + i * barWidth;
       const h = (v / maxVol) * volHeight;
       const y = volTop + volHeight - h;
 
-      ctx.fillStyle = isGreen ? 'rgba(0, 255, 136, 0.6)' : 'rgba(255, 68, 68, 0.6)';
-      ctx.fillRect(x, y, barWidth - 1, h);
+      // Bar color
+      if (v > avgVol * 5) {
+        ctx.fillStyle = '#ff0000'; // Extreme spike
+      } else if (v > avgVol * 3) {
+        ctx.fillStyle = '#ff6600'; // High spike
+      } else if (v > avgVol * 2) {
+        ctx.fillStyle = '#ffaa00'; // Medium spike
+      } else {
+        ctx.fillStyle = isGreen ? 'rgba(0, 255, 136, 0.7)' : 'rgba(255, 68, 68, 0.7)';
+      }
+      ctx.fillRect(x + 1, y, barWidth - 2, h);
 
       // Spike indicator
-      if (v > avgVolume * 3) {
-        ctx.fillStyle = '#ffd700';
-        ctx.fillRect(x, y - 3, barWidth - 1, 3);
+      if (v > avgVol * 3) {
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(x + 1, y - 5, barWidth - 2, 5);
       }
     }
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px Arial';
-    ctx.fillText(`${coin}/USDT - VOLUME`, 10, 25);
-    ctx.fillStyle = '#ffd700';
-    ctx.fillText(`Current: ${(volumes[volumes.length - 1] / avgVolume).toFixed(1)}x avg`, 10, this.height - 10);
+    // Legend
+    ctx.fillStyle = '#ff0000';
+    ctx.font = '18px Arial';
+    ctx.fillText('■ Extreme (>5x)', chartRight - 180, this.height - 130);
+    ctx.fillStyle = '#ff6600';
+    ctx.fillText('■ High (>3x)', chartRight - 180, this.height - 108);
+    ctx.fillStyle = '#ffaa00';
+    ctx.fillText('■ Medium (>2x)', chartRight - 180, this.height - 86);
+
+    // Footer
+    ctx.fillStyle = '#888888';
+    ctx.font = '22px Arial';
+    ctx.fillText(`Data: ${candles.length} periods | Max: ${this.formatNumber(maxVol)} | Min: ${this.formatNumber(Math.min(...volumes))}`, 30, this.height - 30);
 
     return canvas.toBuffer('image/png');
+  }
+
+  formatNumber(num) {
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+    if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+    return num.toFixed(2);
   }
 
   calculateRSI(closes, period = 14) {
