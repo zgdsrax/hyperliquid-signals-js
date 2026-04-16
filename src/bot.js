@@ -19,6 +19,9 @@ const { BollingerCalculator } = require('./indicators/bollinger');
 const { ATRCalculator } = require('./indicators/atr');
 const { PriceChangeAnalyzer } = require('./indicators/price_change');
 const { SuperTrendCalculator } = require('./indicators/supertrend');
+const { FVGCalculator } = require('./indicators/fvg');
+const { MSSCalculator } = require('./indicators/mss');
+const { OHLCRuleCalculator } = require('./indicators/ohlc_rule');
 const { SignalManager } = require('./signals/signalManager');
 
 class HyperliquidSignalsBot {
@@ -82,6 +85,12 @@ class HyperliquidSignalsBot {
           return ATRCalculator.checkSignal(candles, coin, timeframe);
         case 'SUPERTREND':
           return SuperTrendCalculator.checkSignal(candles, coin, timeframe);
+        case 'FVG':
+          return FVGCalculator.checkSignal(candles, coin, timeframe);
+        case 'MSS':
+          return MSSCalculator.checkSignal(candles, coin, timeframe);
+        case 'OHLC_RULE':
+          return OHLCRuleCalculator.checkSignal(candles, coin, timeframe);
         case 'PRICE':
           return PriceChangeAnalyzer.checkSignal(candles, coin, timeframe);
         default:
@@ -94,7 +103,7 @@ class HyperliquidSignalsBot {
   }
 
   async scanAll(coins, timeframe = '15m') {
-    const indicators = ['RSI', 'VOLUME', 'MACD', 'MA_CROSS', 'BOLLINGER', 'ATR', 'PRICE', 'SUPERTREND'];
+    const indicators = ['RSI', 'VOLUME', 'MACD', 'MA_CROSS', 'BOLLINGER', 'ATR', 'PRICE', 'SUPERTREND', 'FVG', 'MSS', 'OHLC_RULE'];
     const signals = [];
 
     console.log(`\n📊 Scanning ${coins.length} coins with ${indicators.length} indicators...`);

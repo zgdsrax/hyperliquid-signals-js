@@ -58,7 +58,15 @@ class SignalManager {
       'PRICE_PUMP': '🚀',
       'PRICE_DUMP': '📉',
       'SUPERTREND_BULLISH': '🟢',
-      'SUPERTREND_BEARISH': '🔴'
+      'SUPERTREND_BEARISH': '🔴',
+      'FVG_BULLISH': '🟢',
+      'FVG_BEARISH': '🔴',
+      'MSS_BULLISH': '🟢',
+      'MSS_BEARISH': '🔴',
+      'OHLC_DISCOUNT_BUY': '🟢',
+      'OHLC_PREMIUM_SELL': '🔴',
+      'OHLC_STRONG_BULL': '🟢',
+      'OHLC_STRONG_BEAR': '🔴'
     };
 
     const emoji = emojiMap[signal.signalType] || '📊';
